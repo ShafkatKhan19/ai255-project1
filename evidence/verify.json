@@ -1,0 +1,86 @@
+{
+  "time": "2026-10-26 09:15 UTC",
+  "domain": "cloud.gadgetgroveny.com",
+  "ip": "34.72.141.1",
+  "bucket": "ai255-p1-shafkat-web-content",
+  "results": [
+    {
+      "check": "DNS A record for domain",
+      "ok": true,
+      "detail": "cloud.gadgetgroveny.com -> 34.72.141.1",
+      "ms": 53
+    },
+    {
+      "check": "DNS A record for www",
+      "ok": true,
+      "detail": "www.cloud.gadgetgroveny.com -> 34.72.141.1",
+      "ms": 21
+    },
+    {
+      "check": "HTTP redirects to HTTPS",
+      "ok": true,
+      "detail": "HTTP 308 -> https://cloud.gadgetgroveny.com/",
+      "ms": 107
+    },
+    {
+      "check": "TLS certificate valid and trusted",
+      "ok": true,
+      "detail": "TLSv1.3, issuer Let's Encrypt (YE2), names ['cloud.gadgetgroveny.com'], expires 2027-01-24 (89 days)",
+      "ms": 170
+    },
+    {
+      "check": "GET / (page from bucket)",
+      "ok": true,
+      "detail": "HTTP 200, text/html; charset=utf-8, 2176 bytes",
+      "ms": 276
+    },
+    {
+      "check": "GET /api/health",
+      "ok": true,
+      "detail": "HTTP 200, application/json, 16 bytes",
+      "ms": 155
+    },
+    {
+      "check": "GET /api/files",
+      "ok": true,
+      "detail": "HTTP 200, application/json, 176 bytes",
+      "ms": 158
+    },
+    {
+      "check": "GET /files/hello.txt",
+      "ok": true,
+      "detail": "HTTP 200, text/plain, 104 bytes",
+      "ms": 306
+    },
+    {
+      "check": "Path traversal is rejected",
+      "ok": true,
+      "detail": "HTTP 400, page not leaked",
+      "ms": 158
+    },
+    {
+      "check": "GET /api/info (runs on the VM)",
+      "ok": true,
+      "detail": "{\"service\": \"ai255-web\", \"version\": \"1.0.0\", \"instance\": \"web-1\", \"zone\": \"us-central1-a\", \"storage\": \"gs://ai255-p1-shafkat-web-content\", \"uptime_seconds\": 574}",
+      "ms": 136
+    },
+    {
+      "check": "Security headers",
+      "ok": true,
+      "detail": "strict-transport-security: max-age=31536000, x-content-type-options: nosniff, x-frame-options: DENY",
+      "ms": 164
+    },
+    {
+      "check": "www redirects to main domain",
+      "ok": true,
+      "detail": "HTTP 301 -> https://cloud.gadgetgroveny.com/",
+      "ms": 184
+    },
+    {
+      "check": "Bucket is not public",
+      "ok": true,
+      "detail": "anonymous read of https://storage.googleapis.com/ai255-p1-shafkat-web-content/public/hello.txt -> HTTP 403",
+      "ms": 250
+    }
+  ]
+}

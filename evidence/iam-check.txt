@@ -1,0 +1,7 @@
+﻿service account: web-vm@ai255-p1-shafkat.iam.gserviceaccount.com
+bucket:          ai255-p1-shafkat-web-content
+READ   object in content bucket          -> 200  (expect 200)
+WRITE  new object in content bucket      -> 403  (expect 403)
+DELETE object in content bucket          -> 403  (expect 403)
+LIST   all buckets in the project        -> 403  (expect 403)
+LIST   VMs in the project (Compute API)  -> 403  (expect 403)
