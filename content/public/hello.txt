@@ -1,0 +1,2 @@
+Hello from Cloud Storage.
+This file is stored in a private bucket and read by the VM's service account.

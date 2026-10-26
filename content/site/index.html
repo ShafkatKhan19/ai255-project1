@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 255 Project 1</title>
+<style>
+  body { font-family: system-ui, Arial, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #1b1b1b; }
+  h1 { margin-bottom: .2rem; }
+  .muted { color: #666; }
+  table { border-collapse: collapse; width: 100%; margin: .5rem 0 1.5rem; }
+  th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #ddd; }
+  code { background: #f2f2f2; padding: 0 .25rem; }
+</style>
+</head>
+<body>
+<h1>AI 255 Project 1: First Cloud Deployment</h1>
+<p class="muted">This page is stored in a private Cloud Storage bucket and served by a Compute Engine VM over HTTPS.</p>
+
+<h2>Server</h2>
+<table id="info"><tr><td>Loading…</td></tr></table>
+
+<h2>Files in the bucket</h2>
+<table id="files"><tr><td>Loading…</td></tr></table>
+
+<p class="muted">API: <code>/api/health</code>, <code>/api/info</code>, <code>/api/files</code>, <code>/files/&lt;name&gt;</code></p>
+
+<script>
+function row(cells, tag) {
+  const tr = document.createElement("tr");
+  for (const c of cells) {
+    const td = document.createElement(tag || "td");
+    if (c instanceof Node) td.appendChild(c); else td.textContent = c;
+    tr.appendChild(td);
+  }
+  return tr;
+}
+fetch("/api/info").then(r => r.json()).then(info => {
+  const t = document.getElementById("info");
+  t.innerHTML = "";
+  for (const [k, v] of Object.entries(info)) t.appendChild(row([k, String(v)]));
+}).catch(() => { document.getElementById("info").innerHTML = "<tr><td>Could not load /api/info</td></tr>"; });
+fetch("/api/files").then(r => r.json()).then(data => {
+  const t = document.getElementById("files");
+  t.innerHTML = "";
+  t.appendChild(row(["Name", "Size (bytes)", "Updated"], "th"));
+  for (const f of data.files) {
+    const a = document.createElement("a");
+    a.href = "/files/" + encodeURIComponent(f.name);
+    a.textContent = f.name;
+    t.appendChild(row([a, String(f.size), f.updated]));
+  }
+}).catch(() => { document.getElementById("files").innerHTML = "<tr><td>Could not load /api/files</td></tr>"; });
+</script>
+</body>
+</html>
