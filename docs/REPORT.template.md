@@ -116,4 +116,4 @@ See `README.md` for every command. In short: `terraform apply` in `infra/`, add 
 
 ## 10. Use of generative AI
 
-_Check that this section is accurate and change it if needed before submitting._ I used Claude (Anthropic) as an assistant while writing the code, the Terraform files, the scripts and this report. I deployed and tested the system myself, and I can explain every resource, setting and number in this report.
+I used Claude (Anthropic) as an assistant while writing the code, the Terraform files, the scripts and this report. I deployed and tested the system myself, and I can explain every resource, setting and number in this report.
