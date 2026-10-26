@@ -1,0 +1,140 @@
+#!/bin/bash
+# VM startup script. Terraform fills in the four values below (templatefile).
+# It runs as root on every boot and is safe to run again: rebooting the VM
+# installs the newest app release from the bucket.
+# Logs: sudo journalctl -u google-startup-scripts.service
+set -euo pipefail
+
+BUCKET="${bucket}"
+DOMAIN="${domain}"
+ACME_EMAIL="${acme_email}"
+APP_VERSION="${app_version}"
+METADATA="http://metadata.google.internal/computeMetadata/v1"
+
+log() { echo "[startup] $*"; }
+
+# 1. Packages: Python for the app, Caddy for HTTPS (official Caddy apt repository).
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get install -y --no-install-recommends python3 curl gnupg ca-certificates \
+  debian-keyring debian-archive-keyring apt-transport-https
+if ! command -v caddy >/dev/null 2>&1; then
+  log "installing Caddy"
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+    | gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+    > /etc/apt/sources.list.d/caddy-stable.list
+  chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list
+  apt-get update -y
+  apt-get install -y caddy
+fi
+
+# 2. Download the app release from the private bucket using the VM's own
+#    service account token (no keys on disk). New IAM grants can take a
+#    minute or two to apply, so retry for up to 5 minutes.
+id -u webapp >/dev/null 2>&1 || useradd --system --user-group --no-create-home --shell /usr/sbin/nologin webapp
+install -d -o root -g root -m 755 /opt/webapp
+
+download_app() {
+  local token
+  token=$(curl -sf -H "Metadata-Flavor: Google" "$METADATA/instance/service-accounts/default/token" \
+    | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])') || return 1
+  curl -sf -H "Authorization: Bearer $token" -o /opt/webapp/server.py.new \
+    "https://storage.googleapis.com/storage/v1/b/$BUCKET/o/release%2Fserver.py?alt=media" || return 1
+}
+
+ok=0
+for attempt in $(seq 1 30); do
+  if download_app; then ok=1; break; fi
+  log "download attempt $attempt failed, retrying in 10 s"
+  sleep 10
+done
+if [ "$ok" -ne 1 ]; then
+  log "could not download the app from gs://$BUCKET/release/server.py"
+  exit 1
+fi
+python3 -c 'import ast, sys; ast.parse(open(sys.argv[1]).read())' /opt/webapp/server.py.new  # refuse a broken file
+mv /opt/webapp/server.py.new /opt/webapp/server.py
+chmod 644 /opt/webapp/server.py
+log "app downloaded"
+
+# 3. Run the app as an unprivileged user, listening on localhost only.
+cat > /etc/systemd/system/webapp.service <<EOF
+[Unit]
+Description=AI 255 web service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=webapp
+Group=webapp
+Environment=BUCKET=$BUCKET
+Environment=APP_VERSION=$APP_VERSION
+Environment=HOST=127.0.0.1
+Environment=PORT=8080
+ExecStart=/usr/bin/python3 -u /opt/webapp/server.py
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl daemon-reload
+systemctl enable webapp
+systemctl restart webapp
+
+# 4. Caddy: gets a Let's Encrypt certificate for the domain, renews it,
+#    redirects HTTP to HTTPS, and forwards requests to the app.
+GLOBAL_OPTIONS=""
+if [ -n "$ACME_EMAIL" ]; then
+  GLOBAL_OPTIONS=$(printf '{\n\temail %s\n}\n\n' "$ACME_EMAIL")
+fi
+cat > /etc/caddy/Caddyfile <<EOF
+$GLOBAL_OPTIONS
+$DOMAIN {
+	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:8080
+}
+
+www.$DOMAIN {
+	redir https://$DOMAIN{uri} permanent
+}
+EOF
+# 5. "iam-check": shows what the VM's service account may and may not do.
+#    Run it with: gcloud compute ssh web-1 --zone ZONE --tunnel-through-iap --command iam-check
+cat > /usr/local/bin/iam-check <<'EOF'
+#!/bin/bash
+# Expected: READ 200, everything else 403 (forbidden).
+set -u
+MD="http://metadata.google.internal/computeMetadata/v1"
+BUCKET=$(systemctl show webapp -p Environment --value | tr ' ' '\n' | sed -n 's/^BUCKET=//p')
+PROJECT=$(curl -s -H "Metadata-Flavor: Google" "$MD/project/project-id")
+ZONE=$(curl -s -H "Metadata-Flavor: Google" "$MD/instance/zone" | awk -F/ '{print $NF}')
+SA=$(curl -s -H "Metadata-Flavor: Google" "$MD/instance/service-accounts/default/email")
+T=$(curl -s -H "Metadata-Flavor: Google" "$MD/instance/service-accounts/default/token" | python3 -c 'import json, sys; print(json.load(sys.stdin)["access_token"])')
+code() { curl -s -o /dev/null -w '%%{http_code}' -H "Authorization: Bearer $T" "$@"; }
+echo "service account: $SA"
+echo "bucket:          $BUCKET"
+echo "READ   object in content bucket          -> $(code "https://storage.googleapis.com/storage/v1/b/$BUCKET/o/public%2Fhello.txt?alt=media")  (expect 200)"
+echo "WRITE  new object in content bucket      -> $(code -X POST -H 'Content-Type: text/plain' --data 'test' "https://storage.googleapis.com/upload/storage/v1/b/$BUCKET/o?uploadType=media&name=public%2Fiam-check.txt")  (expect 403)"
+echo "DELETE object in content bucket          -> $(code -X DELETE "https://storage.googleapis.com/storage/v1/b/$BUCKET/o/public%2Fhello.txt")  (expect 403)"
+echo "LIST   all buckets in the project        -> $(code "https://storage.googleapis.com/storage/v1/b?project=$PROJECT")  (expect 403)"
+echo "LIST   VMs in the project (Compute API)  -> $(code "https://compute.googleapis.com/compute/v1/projects/$PROJECT/zones/$ZONE/instances")  (expect 403)"
+EOF
+chmod 755 /usr/local/bin/iam-check
+
+caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+systemctl enable caddy
+systemctl restart caddy
+log "done: https://$DOMAIN (the certificate is issued once DNS points here)"

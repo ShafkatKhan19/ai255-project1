@@ -1,0 +1,4 @@
+# Copy this file to terraform.tfvars and fill in your values.
+project_id = "your-project-id"
+domain     = "yourdomain.me"
+acme_email = "you@example.com"
