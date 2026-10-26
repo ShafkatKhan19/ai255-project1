@@ -1,0 +1,35 @@
+{
+  "retrieved": "2026-10-25",
+  "region": "us-central1 (Iowa)",
+  "currency": "USD",
+  "hours_per_month": 730,
+  "prices": {
+    "e2_micro_per_hour": {"value": 0.0084, "source": "https://cloudprice.net/gcp/compute/instances/e2-small (e2-micro listed as 0.0084/h in us-central1)"},
+    "e2_small_per_hour": {"value": 0.0168, "source": "https://cloudprice.net/gcp/compute/instances/e2-small"},
+    "e2_medium_per_hour": {"value": 0.0335, "source": "https://gcloud-compute.com/e2-medium.html (cross-check: e2-small is half of e2-medium)"},
+    "pd_standard_per_gb_month": {"value": 0.04, "source": "https://gcloud-compute.com/diskpricing.html"},
+    "external_ip_in_use_per_hour": {"value": 0.005, "source": "https://cloud.google.com/vpc/network-pricing (External IP address pricing, standard VM)"},
+    "egress_premium_to_north_america_tiers": {
+      "value": [[1, 0.0], [1024, 0.12], [10240, 0.11], [null, 0.08]],
+      "unit": "list of [upper bound in GiB per month, price per GiB]; null = no upper bound",
+      "source": "https://cloud.google.com/vpc/network-pricing (Premium Tier, data transfer out to North America)"
+    },
+    "dns_zone_per_month": {"value": 0.20, "source": "https://cloud.google.com/dns/pricing (0-25 zones: $0.000273973 per hour per zone)"},
+    "dns_queries_per_million": {"value": 0.40, "source": "https://cloud.google.com/dns/pricing (first 1 billion queries)"},
+    "gcs_standard_per_gib_month": {"value": 0.02, "source": "https://cloud.google.com/storage/pricing ($0.000027397 per GiB-hour, us-central1)"},
+    "gcs_class_a_per_1000": {"value": 0.005, "source": "https://cloud.google.com/storage/pricing"},
+    "gcs_class_b_per_1000": {"value": 0.0004, "source": "https://cloud.google.com/storage/pricing"},
+    "lb_forwarding_rule_per_hour": {"value": 0.025, "source": "https://cloud.google.com/load-balancing/pricing (global external Application LB, first 5 rules)"},
+    "lb_data_processed_per_gib": {"value": 0.008, "source": "https://cloud.google.com/load-balancing/pricing (us-central1, inbound and outbound)"}
+  },
+  "free_tier": {
+    "source": "https://docs.cloud.google.com/free/docs/free-cloud-features",
+    "e2_micro_hours": 730,
+    "pd_standard_gb_month": 30,
+    "egress_gib": 1,
+    "gcs_storage_gb_month": 5,
+    "gcs_class_a_ops": 5000,
+    "gcs_class_b_ops": 50000,
+    "note": "Free tier applies to one e2-micro in us-west1, us-central1 or us-east1. External IPv4 addresses and Cloud DNS are not in the free tier. The 1 GiB of egress is the same allowance as the first (free) egress tier, so it is counted once."
+  }
+}
