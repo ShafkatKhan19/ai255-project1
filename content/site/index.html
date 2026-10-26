@@ -3,54 +3,323 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AI 255 Project 1</title>
+<title>AI 255 Project 1: First Cloud Deployment</title>
 <style>
-  body { font-family: system-ui, Arial, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #1b1b1b; }
-  h1 { margin-bottom: .2rem; }
-  .muted { color: #666; }
-  table { border-collapse: collapse; width: 100%; margin: .5rem 0 1.5rem; }
-  th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #ddd; }
-  code { background: #f2f2f2; padding: 0 .25rem; }
+  :root {
+    --coral: #ff5a3c; --coral-dark: #e0432a; --coral-soft: #ffe1d8;
+    --cream: #fbf4ea; --cream-2: #f3e9da; --ink: #141414; --ink-2: #2a2622; --muted: #6f6559;
+    --line: #e6dccd; --ok: #2f9e5b;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; line-height: 1.5; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.25rem; }
+  .serif { font-family: Georgia, "Times New Roman", serif; }
+
+  /* ---------- hero ---------- */
+  header { background: var(--ink); color: var(--cream); position: relative; overflow: hidden; }
+  header::after { content: ""; position: absolute; right: -120px; top: -120px; width: 420px; height: 420px; border-radius: 50%;
+                  background: radial-gradient(circle, rgba(255,90,60,.45), rgba(255,90,60,0) 70%); }
+  .hero { position: relative; z-index: 1; padding: 3rem 0 4.2rem; display: grid; gap: 1.2rem; }
+  .eyebrow { display: inline-flex; align-items: center; gap: .55rem; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--coral); font-weight: 700; }
+  .live { width: .55rem; height: .55rem; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 0 rgba(255,90,60,.7); animation: pulse 1.8s infinite; }
+  .live.down { background: #888; animation: none; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,90,60,.6); } 70% { box-shadow: 0 0 0 12px rgba(255,90,60,0); } 100% { box-shadow: 0 0 0 0 rgba(255,90,60,0); } }
+  h1 { margin: 0; font-size: clamp(2rem, 5.2vw, 3.6rem); line-height: 1.05; letter-spacing: -.02em; font-weight: 700; }
+  h1 em { font-style: normal; color: var(--coral); }
+  .lead { margin: 0; max-width: 640px; color: #d9cfc2; font-size: 1.05rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .chip { font-size: .8rem; padding: .32rem .75rem; border-radius: 999px; border: 1px solid rgba(251,244,234,.25); color: var(--cream); }
+  .chip.hot { background: var(--coral); border-color: var(--coral); color: var(--ink); font-weight: 600; }
+
+  /* ---------- stat tiles ---------- */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-top: -2.4rem; position: relative; z-index: 2; }
+  .tile { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 1rem 1.1rem; box-shadow: 0 10px 30px -18px rgba(20,20,20,.35); }
+  .tile .label { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .tile .value { font-size: 1.7rem; font-weight: 700; margin-top: .15rem; font-variant-numeric: tabular-nums; }
+  .tile .value small { font-size: .9rem; font-weight: 500; color: var(--muted); }
+  .tile .sub { font-size: .82rem; color: var(--muted); }
+  .tile.accent { background: var(--coral); border-color: var(--coral); color: var(--ink); }
+  .tile.accent .label, .tile.accent .sub { color: rgba(20,20,20,.7); }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 2.6rem; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+  h2 { margin: 0; font-size: 1.55rem; letter-spacing: -.01em; }
+  h2 .num { color: var(--coral); margin-right: .4rem; }
+  .hint { color: var(--muted); font-size: .9rem; }
+  .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 1.2rem 1.3rem; }
+  .two { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1rem; }
+
+  /* latency chart */
+  .chart-box { position: relative; height: 170px; }
+  svg.chart { width: 100%; height: 100%; display: block; }
+  .chart-legend { display: flex; gap: 1.2rem; font-size: .85rem; color: var(--muted); margin-top: .5rem; flex-wrap: wrap; }
+  .chart-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* key/value */
+  .kv { width: 100%; border-collapse: collapse; font-size: .93rem; }
+  .kv td { padding: .5rem 0; border-bottom: 1px dashed var(--line); }
+  .kv td:first-child { color: var(--muted); width: 40%; }
+  .kv tr:last-child td { border-bottom: 0; }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: .86em; background: var(--cream-2); padding: .08rem .35rem; border-radius: 5px; }
+
+  /* request path animation */
+  .path { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; padding-top: 1.6rem; }
+  .track { position: absolute; left: 12.5%; right: 12.5%; top: .55rem; height: 3px; background: var(--line); border-radius: 3px; }
+  .packet { position: absolute; top: -5px; left: 0; width: 13px; height: 13px; border-radius: 50%; background: var(--coral); box-shadow: 0 0 0 5px var(--coral-soft); animation: travel 4.8s cubic-bezier(.6,.05,.4,.95) infinite; }
+  @keyframes travel { 0% { left: 0; } 30% { left: 33.33%; } 55% { left: 66.66%; } 85%, 100% { left: calc(100% - 13px); } }
+  .stop { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 1rem; position: relative; }
+  .stop::before { content: ""; position: absolute; top: -1.35rem; left: 50%; width: 11px; height: 11px; margin-left: -5.5px; border-radius: 50%; background: var(--ink); border: 3px solid var(--cream); }
+  .stop .n { font-size: .75rem; font-weight: 700; letter-spacing: .12em; color: var(--coral); text-transform: uppercase; }
+  .stop h3 { margin: .2rem 0 .35rem; font-size: 1.05rem; }
+  .stop p { margin: 0; font-size: .88rem; color: var(--ink-2); }
+
+  /* security list */
+  .checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+  .check { background: var(--ink); color: var(--cream); border-radius: 16px; padding: 1.05rem 1.15rem; }
+  .check .ico { width: 30px; height: 30px; border-radius: 9px; background: var(--coral); color: var(--ink); display: grid; place-items: center; font-weight: 800; margin-bottom: .6rem; }
+  .check h3 { margin: 0 0 .25rem; font-size: 1rem; }
+  .check p { margin: 0; font-size: .86rem; color: #cfc5b8; }
+
+  /* files */
+  table.files { width: 100%; border-collapse: collapse; font-size: .93rem; }
+  table.files th { text-align: left; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; padding: .4rem .4rem .6rem; }
+  table.files td { padding: .7rem .4rem; border-top: 1px solid var(--line); }
+  table.files tr:hover td { background: #fffaf3; }
+  .ftype { display: inline-block; min-width: 2.6rem; text-align: center; font-size: .7rem; font-weight: 700; padding: .15rem .35rem; border-radius: 6px; background: var(--coral-soft); color: var(--coral-dark); margin-right: .55rem; text-transform: uppercase; }
+  a { color: var(--ink); text-decoration-color: var(--coral); text-underline-offset: 3px; text-decoration-thickness: 2px; }
+  a:hover { color: var(--coral-dark); }
+
+  /* diagram */
+  svg.arch { width: 100%; height: auto; display: block; }
+  .arch text { font-family: "Segoe UI", system-ui, Arial, sans-serif; }
+
+  footer { margin-top: 3.2rem; background: var(--ink); color: #cfc5b8; padding: 1.6rem 0; font-size: .88rem; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  footer code { background: #2a2622; color: var(--cream); }
+
+  .fade { opacity: 0; transform: translateY(14px); animation: in .7s ease forwards; }
+  .d1 { animation-delay: .05s; } .d2 { animation-delay: .15s; } .d3 { animation-delay: .25s; } .d4 { animation-delay: .35s; }
+  @keyframes in { to { opacity: 1; transform: none; } }
+
+  @media (max-width: 860px) {
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    .two, .checks { grid-template-columns: 1fr; }
+    .path { grid-template-columns: 1fr 1fr; }
+    .track { display: none; }
+    .stop::before { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } .fade { opacity: 1; transform: none; } }
 </style>
 </head>
 <body>
-<h1>AI 255 Project 1: First Cloud Deployment</h1>
-<p class="muted">This page is stored in a private Cloud Storage bucket and served by a Compute Engine VM over HTTPS.</p>
 
-<h2>Server</h2>
-<table id="info"><tr><td>Loading…</td></tr></table>
+<header>
+  <div class="wrap hero">
+    <span class="eyebrow"><span id="live-dot" class="live"></span><span id="live-text">Live on Google Cloud</span></span>
+    <h1 class="serif">First Cloud <em>Deployment</em></h1>
+    <p class="lead">AI 255 Project 1. A web service on a Compute Engine VM, reading this page from a private Cloud Storage bucket, reachable through Cloud DNS and served only over HTTPS. Every resource is created with Terraform.</p>
+    <div class="chips">
+      <span class="chip hot">Google Cloud · us-central1</span>
+      <span class="chip">Compute Engine</span><span class="chip">Cloud Storage</span><span class="chip">Cloud DNS</span>
+      <span class="chip">Let's Encrypt TLS</span><span class="chip">Least-privilege IAM</span><span class="chip">Terraform</span>
+    </div>
+  </div>
+</header>
 
-<h2>Files in the bucket</h2>
-<table id="files"><tr><td>Loading…</td></tr></table>
+<main class="wrap">
+  <div class="tiles">
+    <div class="tile accent fade d1"><div class="label">Status</div><div class="value" id="t-status">…</div><div class="sub" id="t-status-sub">checking /api/health</div></div>
+    <div class="tile fade d2"><div class="label">Response time</div><div class="value"><span id="t-latency">…</span> <small>ms</small></div><div class="sub">from your browser, live</div></div>
+    <div class="tile fade d3"><div class="label">Uptime</div><div class="value" id="t-uptime">…</div><div class="sub">since the service started</div></div>
+    <div class="tile fade d4"><div class="label">Connection</div><div class="value" id="t-proto">…</div><div class="sub" id="t-host">…</div></div>
+  </div>
 
-<p class="muted">API: <code>/api/health</code>, <code>/api/info</code>, <code>/api/files</code>, <code>/files/&lt;name&gt;</code></p>
+  <section>
+    <div class="section-head"><h2 class="serif"><span class="num">01</span>Live health</h2><span class="hint">A new measurement every 5 seconds</span></div>
+    <div class="two">
+      <div class="card">
+        <div class="chart-box"><svg class="chart" id="chart" viewBox="0 0 600 170" preserveAspectRatio="none" aria-label="Response time chart"></svg></div>
+        <div class="chart-legend">
+          <span>Last <b id="c-last">–</b> ms</span><span>Average <b id="c-avg">–</b> ms</span>
+          <span>Best <b id="c-min">–</b> ms</span><span>Checks <b id="c-count">0</b></span>
+        </div>
+      </div>
+      <div class="card">
+        <table class="kv" id="info"><tr><td>Loading…</td><td></td></tr></table>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2 class="serif"><span class="num">02</span>How this page reached you</h2><span class="hint">One request, four stops</span></div>
+    <div class="path">
+      <div class="track"><div class="packet"></div></div>
+      <div class="stop"><div class="n">Stop 1</div><h3>Cloud DNS</h3><p><code id="p-host">this domain</code> resolves to the VM's static IP.</p></div>
+      <div class="stop"><div class="n">Stop 2</div><h3>Firewall + TLS</h3><p>Only 80 and 443 are open. Caddy terminates HTTPS with a Let's Encrypt certificate.</p></div>
+      <div class="stop"><div class="n">Stop 3</div><h3>VM web-1</h3><p>A Python service on <code>127.0.0.1:8080</code>, running as an unprivileged user.</p></div>
+      <div class="stop"><div class="n">Stop 4</div><h3>Private bucket</h3><p>The page and files are read with a read-only service account. No keys on the VM.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2 class="serif"><span class="num">03</span>Security by design</h2><span class="hint">What protects this service</span></div>
+    <div class="checks">
+      <div class="check"><div class="ico">1</div><h3>HTTPS only</h3><p>HTTP redirects to HTTPS. HSTS, nosniff and frame-deny headers on every response.</p></div>
+      <div class="check"><div class="ico">2</div><h3>Read-only identity</h3><p>The VM's service account can read one bucket. Writing, deleting or any other API returns 403.</p></div>
+      <div class="check"><div class="ico">3</div><h3>Private storage</h3><p>Public access prevention is enforced on the bucket. Files are only reachable through the service.</p></div>
+      <div class="check"><div class="ico">4</div><h3>Closed network</h3><p>Custom VPC. SSH is not open to the internet, only through Google's Identity-Aware Proxy.</p></div>
+      <div class="check"><div class="ico">5</div><h3>Hardened VM</h3><p>Shielded VM with Secure Boot, OS Login, and a systemd sandbox around the app.</p></div>
+      <div class="check"><div class="ico">6</div><h3>Locked certificates</h3><p>A CAA record allows only Let's Encrypt to issue certificates for this domain.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2 class="serif"><span class="num">04</span>Architecture</h2><a class="hint" href="/files/architecture.png" target="_blank" rel="noopener">Open the detailed diagram</a></div>
+    <div class="card">
+      <svg class="arch" viewBox="0 0 980 300" role="img" aria-label="Architecture: browser to Cloud DNS and static IP, firewall, VM with Caddy and Python service, service account, Cloud Storage bucket">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#141414"/></marker>
+          <marker id="arc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#ff5a3c"/></marker>
+        </defs>
+        <rect x="170" y="14" width="796" height="272" rx="18" fill="#fbf4ea" stroke="#e6dccd" stroke-width="2"/>
+        <text x="190" y="40" font-size="13" fill="#6f6559" font-weight="700" letter-spacing="2">GOOGLE CLOUD PROJECT · US-CENTRAL1</text>
+        <rect x="330" y="58" width="420" height="200" rx="14" fill="#fff" stroke="#141414" stroke-width="1.5" stroke-dasharray="5 5"/>
+        <text x="348" y="80" font-size="12" fill="#6f6559" font-weight="700" letter-spacing="1.5">VPC web-vpc · 10.10.0.0/24</text>
+
+        <g><rect x="14" y="120" width="120" height="58" rx="12" fill="#141414"/><text x="74" y="146" fill="#fbf4ea" font-size="14" font-weight="700" text-anchor="middle">Visitor</text><text x="74" y="165" fill="#cfc5b8" font-size="11" text-anchor="middle">browser</text></g>
+        <g><rect x="190" y="62" width="120" height="52" rx="12" fill="#fff" stroke="#e6dccd" stroke-width="1.5"/><text x="250" y="85" font-size="13" font-weight="700" text-anchor="middle">Cloud DNS</text><text x="250" y="102" font-size="10.5" fill="#6f6559" text-anchor="middle">A record → static IP</text></g>
+        <g><rect x="190" y="150" width="120" height="52" rx="12" fill="#fff" stroke="#e6dccd" stroke-width="1.5"/><text x="250" y="173" font-size="13" font-weight="700" text-anchor="middle">Static IP</text><text x="250" y="190" font-size="10.5" fill="#6f6559" text-anchor="middle">Premium Tier</text></g>
+        <g><rect x="350" y="110" width="110" height="80" rx="12" fill="#ffe1d8" stroke="#ff5a3c" stroke-width="1.5"/><text x="405" y="140" font-size="13" font-weight="700" text-anchor="middle">Firewall</text><text x="405" y="158" font-size="10.5" fill="#2a2622" text-anchor="middle">80, 443 open</text><text x="405" y="173" font-size="10.5" fill="#2a2622" text-anchor="middle">22 via IAP only</text></g>
+        <g><rect x="490" y="96" width="240" height="140" rx="14" fill="#141414"/><text x="510" y="120" fill="#ff5a3c" font-size="11" font-weight="700" letter-spacing="1.5">VM web-1 · e2-micro</text>
+          <rect x="508" y="132" width="98" height="84" rx="10" fill="#2a2622"/><text x="557" y="166" fill="#fbf4ea" font-size="13" font-weight="700" text-anchor="middle">Caddy</text><text x="557" y="184" fill="#cfc5b8" font-size="10.5" text-anchor="middle">TLS :443</text>
+          <rect x="616" y="132" width="98" height="84" rx="10" fill="#2a2622"/><text x="665" y="166" fill="#fbf4ea" font-size="13" font-weight="700" text-anchor="middle">Python</text><text x="665" y="184" fill="#cfc5b8" font-size="10.5" text-anchor="middle">:8080 local</text></g>
+        <g><rect x="790" y="60" width="160" height="60" rx="12" fill="#fff" stroke="#e6dccd" stroke-width="1.5"/><text x="870" y="85" font-size="13" font-weight="700" text-anchor="middle">Service account</text><text x="870" y="103" font-size="10.5" fill="#6f6559" text-anchor="middle">objectViewer, 1 bucket</text></g>
+        <g><rect x="790" y="170" width="160" height="70" rx="12" fill="#ff5a3c"/><text x="870" y="198" font-size="13.5" font-weight="700" text-anchor="middle" fill="#141414">Cloud Storage</text><text x="870" y="216" font-size="10.5" text-anchor="middle" fill="#141414">private bucket</text></g>
+
+        <path d="M134,140 C160,110 170,95 188,90" fill="none" stroke="#141414" stroke-width="1.6" marker-end="url(#ar)"/>
+        <path d="M134,160 L188,172" fill="none" stroke="#ff5a3c" stroke-width="2.4" marker-end="url(#arc)"/>
+        <path d="M310,176 L348,160" fill="none" stroke="#ff5a3c" stroke-width="2.4" marker-end="url(#arc)"/>
+        <path d="M460,150 L506,166" fill="none" stroke="#ff5a3c" stroke-width="2.4" marker-end="url(#arc)"/>
+        <path d="M606,174 L614,174" fill="none" stroke="#ff5a3c" stroke-width="2.4" marker-end="url(#arc)"/>
+        <path d="M714,196 C750,205 765,205 788,205" fill="none" stroke="#ff5a3c" stroke-width="2.4" marker-end="url(#arc)"/>
+        <path d="M714,150 C750,110 765,95 788,92" fill="none" stroke="#141414" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ar)"/>
+        <path d="M870,120 L870,168" fill="none" stroke="#141414" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#ar)"/>
+        <text x="152" y="210" font-size="10.5" fill="#6f6559">HTTPS</text>
+        <text x="738" y="248" font-size="10.5" fill="#6f6559">read</text>
+        <text x="728" y="96" font-size="10.5" fill="#6f6559">token</text>
+      </svg>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2 class="serif"><span class="num">05</span>Files in the bucket</h2><span class="hint">Served by the VM; the bucket itself returns 403</span></div>
+    <div class="card"><table class="files" id="files"><tr><td>Loading…</td></tr></table></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>AI 255 Cloud Computing Concepts · Project 1</span>
+    <span>API: <code>/api/health</code> <code>/api/info</code> <code>/api/files</code> <code>/files/&lt;name&gt;</code></span>
+  </div>
+</footer>
 
 <script>
-function row(cells, tag) {
-  const tr = document.createElement("tr");
-  for (const c of cells) {
-    const td = document.createElement(tag || "td");
-    if (c instanceof Node) td.appendChild(c); else td.textContent = c;
-    tr.appendChild(td);
-  }
-  return tr;
+const $ = id => document.getElementById(id);
+const samples = [];
+let uptimeBase = null, uptimeAt = 0;
+
+$("p-host").textContent = location.hostname;
+$("t-host").textContent = location.hostname;
+$("t-proto").textContent = location.protocol === "https:" ? "HTTPS" : "HTTP";
+
+function fmtUptime(s) {
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), sec = Math.floor(s % 60);
+  if (d) return d + "d " + h + "h";
+  if (h) return h + "h " + m + "m";
+  return m + "m " + String(sec).padStart(2, "0") + "s";
 }
-fetch("/api/info").then(r => r.json()).then(info => {
-  const t = document.getElementById("info");
-  t.innerHTML = "";
-  for (const [k, v] of Object.entries(info)) t.appendChild(row([k, String(v)]));
-}).catch(() => { document.getElementById("info").innerHTML = "<tr><td>Could not load /api/info</td></tr>"; });
-fetch("/api/files").then(r => r.json()).then(data => {
-  const t = document.getElementById("files");
-  t.innerHTML = "";
-  t.appendChild(row(["Name", "Size (bytes)", "Updated"], "th"));
-  for (const f of data.files) {
-    const a = document.createElement("a");
-    a.href = "/files/" + encodeURIComponent(f.name);
-    a.textContent = f.name;
-    t.appendChild(row([a, String(f.size), f.updated]));
+function tickUptime() {
+  if (uptimeBase === null) return;
+  $("t-uptime").textContent = fmtUptime(uptimeBase + (performance.now() - uptimeAt) / 1000);
+}
+setInterval(tickUptime, 1000);
+
+function drawChart() {
+  const svg = $("chart"), W = 600, H = 170, pad = 14, n = 30;
+  const data = samples.slice(-n);
+  if (!data.length) return;
+  const max = Math.max(...data) * 1.25 || 1;
+  const slots = Math.max(data.length - 1, 1);
+  const x = i => pad + i * (W - 2 * pad) / slots;
+  const y = v => H - pad - (v / max) * (H - 2 * pad);
+  const pts = data.map((v, i) => [x(i), y(v)]);
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const area = line + ` L${pts[pts.length - 1][0].toFixed(1)},${H - pad} L${pts[0][0].toFixed(1)},${H - pad} Z`;
+  const last = pts[pts.length - 1];
+  let grid = "";
+  for (let g = 1; g <= 3; g++) { const gy = pad + g * (H - 2 * pad) / 4; grid += `<line x1="${pad}" x2="${W - pad}" y1="${gy}" y2="${gy}" stroke="#e6dccd" stroke-dasharray="3 5"/>`; }
+  svg.innerHTML = `<defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#ff5a3c" stop-opacity=".35"/><stop offset="1" stop-color="#ff5a3c" stop-opacity="0"/></linearGradient></defs>
+    ${grid}<path d="${area}" fill="url(#fill)"/><path d="${line}" fill="none" stroke="#ff5a3c" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="6" fill="#141414" stroke="#fbf4ea" stroke-width="3"/>`;
+  const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length);
+  $("c-last").textContent = data[data.length - 1]; $("c-avg").textContent = avg;
+  $("c-min").textContent = Math.min(...data); $("c-count").textContent = samples.length;
+}
+
+async function checkHealth() {
+  const t0 = performance.now();
+  try {
+    const r = await fetch("/api/health", { cache: "no-store" });
+    const ms = Math.round(performance.now() - t0);
+    const ok = r.ok && (await r.json()).status === "ok";
+    $("t-status").textContent = ok ? "Online" : "Error";
+    $("t-status-sub").textContent = "HTTP " + r.status + " · checked " + new Date().toLocaleTimeString();
+    $("t-latency").textContent = ms;
+    $("live-dot").className = ok ? "live" : "live down";
+    $("live-text").textContent = ok ? "Live on Google Cloud" : "Service error";
+    samples.push(ms);
+    drawChart();
+  } catch (e) {
+    $("t-status").textContent = "Offline";
+    $("t-status-sub").textContent = "no response";
+    $("live-dot").className = "live down";
+    $("live-text").textContent = "Not reachable";
   }
-}).catch(() => { document.getElementById("files").innerHTML = "<tr><td>Could not load /api/files</td></tr>"; });
+}
+checkHealth();
+setInterval(checkHealth, 5000);
+
+fetch("/api/info").then(r => r.json()).then(info => {
+  uptimeBase = info.uptime_seconds; uptimeAt = performance.now(); tickUptime();
+  const rows = [["Service", info.service], ["Version", info.version], ["VM instance", info.instance],
+                ["Zone", info.zone], ["Storage", info.storage]];
+  const t = $("info"); t.innerHTML = "";
+  for (const [k, v] of rows) {
+    const tr = document.createElement("tr");
+    const a = document.createElement("td"); a.textContent = k;
+    const b = document.createElement("td"); b.textContent = String(v);
+    if (k === "Storage" || k === "Zone") { b.innerHTML = ""; const c = document.createElement("code"); c.textContent = String(v); b.appendChild(c); }
+    tr.append(a, b); t.appendChild(tr);
+  }
+}).catch(() => { $("info").innerHTML = "<tr><td>Could not load /api/info</td></tr>"; });
+
+fetch("/api/files").then(r => r.json()).then(data => {
+  const t = $("files");
+  t.innerHTML = "<tr><th>File</th><th>Size</th><th>Updated (UTC)</th></tr>";
+  for (const f of data.files) {
+    const tr = document.createElement("tr");
+    const name = document.createElement("td");
+    const tag = document.createElement("span"); tag.className = "ftype"; tag.textContent = (f.name.split(".").pop() || "file");
+    const a = document.createElement("a"); a.href = "/files/" + encodeURIComponent(f.name); a.textContent = f.name;
+    name.append(tag, a);
+    const size = document.createElement("td"); size.textContent = f.size < 1024 ? f.size + " B" : (f.size / 1024).toFixed(1) + " KB";
+    const upd = document.createElement("td"); upd.textContent = f.updated.replace("T", " ").slice(0, 19);
+    tr.append(name, size, upd); t.appendChild(tr);
+  }
+}).catch(() => { $("files").innerHTML = "<tr><td>Could not load /api/files</td></tr>"; });
 </script>
 </body>
 </html>

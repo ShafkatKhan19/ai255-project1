@@ -1,4 +1,4 @@
-// Architecture diagram. Render with:  dot -Tpng docs/architecture.dot -o docs/architecture.png
+// Older Graphviz version of the diagram. docs/architecture.png is now rendered from docs/architecture.svg (open it in a browser).
 digraph arch {
   graph [rankdir=LR, fontname="Helvetica", fontsize=11, nodesep=0.45, ranksep=0.7, pad=0.3, newrank=true];
   node  [shape=box, style="rounded,filled", fillcolor="white", fontname="Helvetica", fontsize=10, margin="0.15,0.08"];
